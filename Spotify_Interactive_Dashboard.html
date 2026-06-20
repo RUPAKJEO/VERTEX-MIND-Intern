@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify Top Songs 2011–2019 · Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --bg: #121212;
+    --panel: #181818;
+    --panel-2: #1e1e1e;
+    --line: #2a2a2a;
+    --green: #1DB954;
+    --green-dim: #14833c;
+    --text: #f5f5f5;
+    --text-dim: #a7a7a7;
+    --text-faint: #6a6a6a;
+    --amber: #ffb454;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Archivo',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:32px 24px 80px;}
+
+  header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:1px solid var(--line);
+    padding-bottom:24px;margin-bottom:28px;flex-wrap:wrap;gap:16px;
+  }
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    color:var(--green);
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(28px,4vw,44px);
+    margin:0;line-height:1.05;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{color:var(--text-dim);font-size:15px;margin-top:8px;max-width:560px;}
+  .meta{font-family:'Space Mono',monospace;font-size:12px;color:var(--text-faint);text-align:right;}
+
+  /* Pulse strip - signature element */
+  .pulse{
+    display:flex;align-items:flex-end;gap:3px;
+    height:64px;margin-bottom:36px;
+    padding:14px 16px 10px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    position:relative;
+  }
+  .pulse-label{
+    position:absolute;top:8px;left:16px;
+    font-family:'Space Mono',monospace;font-size:10px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);
+  }
+  .pulse-bars{display:flex;align-items:flex-end;gap:4px;height:100%;width:100%;margin-top:14px;}
+  .pulse-bar{flex:1;background:linear-gradient(180deg,var(--green),var(--green-dim));border-radius:2px 2px 0 0;min-height:4px;transition:opacity .2s;}
+  .pulse-bar.dim{opacity:.25;}
+  .pulse-year{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-faint);text-align:center;flex:1;}
+  .pulse-years{display:flex;gap:4px;width:100%;}
+
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+  .kpi{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:18px 18px 16px;
+  }
+  .kpi-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;}
+  .kpi-value{font-family:'Archivo Black',sans-serif;font-size:32px;color:var(--text);line-height:1;}
+  .kpi-value span{color:var(--green);}
+  .kpi-sub{font-size:12px;color:var(--text-dim);margin-top:6px;}
+
+  /* Filters */
+  .filters{
+    display:flex;gap:24px;align-items:center;flex-wrap:wrap;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 18px;margin-bottom:28px;
+  }
+  .filter-group{display:flex;flex-direction:column;gap:6px;}
+  .filter-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);}
+  select{
+    background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+    border-radius:6px;padding:7px 10px;font-family:'Archivo',sans-serif;font-size:13px;
+    min-width:160px;cursor:pointer;
+  }
+  select:focus{outline:2px solid var(--green);outline-offset:1px;}
+  .reset-btn{
+    background:transparent;border:1px solid var(--line);color:var(--text-dim);
+    border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;
+    font-family:'Archivo',sans-serif;align-self:flex-end;
+    transition:border-color .15s,color .15s;
+  }
+  .reset-btn:hover{border-color:var(--green);color:var(--green);}
+  .filter-status{font-size:12px;color:var(--text-faint);margin-left:auto;align-self:center;}
+  .filter-status span{color:var(--green);}
+
+  /* Charts grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px 20px;
+  }
+  .panel-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+  .panel-desc{font-size:12px;color:var(--text-faint);margin-bottom:14px;}
+  svg{display:block;width:100%;}
+  .bar{fill:var(--green);transition:fill .15s, opacity .15s;cursor:pointer;}
+  .bar:hover{fill:var(--amber);}
+  .bar.faded{opacity:.25;}
+  .axis-label{font-family:'Space Mono',monospace;font-size:10px;fill:var(--text-faint);}
+  .bar-value{font-family:'Space Mono',monospace;font-size:10px;fill:var(--text-dim);}
+  .line-path{fill:none;stroke:var(--green);stroke-width:2.5;}
+  .line-dot{fill:var(--green);cursor:pointer;}
+  .line-dot:hover{fill:var(--amber);}
+  .line-fill{fill:url(#lineGrad);opacity:.5;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{
+    text-align:left;font-family:'Space Mono',monospace;font-size:10px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);
+    padding:8px 10px;border-bottom:1px solid var(--line);font-weight:400;
+  }
+  td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--panel-2);}
+  .rank{font-family:'Space Mono',monospace;color:var(--green);width:28px;}
+  .pop-bar-bg{background:var(--line);border-radius:3px;height:6px;width:100%;overflow:hidden;}
+  .pop-bar-fill{background:var(--green);height:100%;border-radius:3px;}
+  .pop-cell{display:flex;align-items:center;gap:8px;}
+  .pop-cell .num{font-family:'Space Mono',monospace;font-size:12px;color:var(--text-dim);width:24px;text-align:right;}
+
+  .empty{padding:40px;text-align:center;color:var(--text-faint);font-size:13px;}
+
+  footer{margin-top:28px;text-align:center;color:var(--text-faint);font-size:12px;font-family:'Space Mono',monospace;}
+
+  @media(max-width:900px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .grid{grid-template-columns:1fr;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">VertexMind Internship · Data Dashboard</div>
+      <h1>Spotify Top Songs<br>2011–2019</h1>
+      <div class="subtitle">60 chart-topping tracks, decade-spanning trends in genre, energy, danceability, and popularity.</div>
+    </div>
+    <div class="meta">DATASET: 60 SONGS<br>SOURCE: SPOTIFY TOP CHARTS<br>BUILT IN HTML/JS</div>
+  </header>
+
+  <div class="pulse">
+    <div class="pulse-label">Decade Pulse — Avg. Energy by Year</div>
+    <div class="pulse-bars" id="pulseBars"></div>
+  </div>
+
+  <div class="kpis" id="kpiRow"></div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label class="filter-label" for="yearFilter">Year</label>
+      <select id="yearFilter"><option value="all">All years</option></select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label" for="genreFilter">Genre</label>
+      <select id="genreFilter"><option value="all">All genres</option></select>
+    </div>
+    <button class="reset-btn" id="resetBtn">Reset filters</button>
+    <div class="filter-status" id="filterStatus">Showing <span id="statusCount">60</span> of 60 songs</div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-title">Genre Distribution</div>
+      <div class="panel-desc">Song count per genre — click a bar to filter</div>
+      <svg id="genreChart" viewBox="0 0 560 280" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Average Popularity by Year</div>
+      <div class="panel-desc">Mean popularity score (0–100) — click a point to filter</div>
+      <svg id="popChart" viewBox="0 0 560 280" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1DB954" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#1DB954" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Avg. Energy &amp; BPM by Year</div>
+      <div class="panel-desc">Two metrics, same scale (0–180) — tracks the decade's cooldown</div>
+      <svg id="energyChart" viewBox="0 0 560 280" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Avg. Danceability by Genre</div>
+      <div class="panel-desc">Mean danceability score (0–100) per genre</div>
+      <svg id="danceChart" viewBox="0 0 560 280" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Top 10 Most Popular Songs</div>
+    <div class="panel-desc" id="tableDesc">Ranked by popularity score within current filter</div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Title</th><th>Artist</th><th>Genre</th><th>Year</th><th>Popularity</th></tr>
+      </thead>
+      <tbody id="songTableBody"></tbody>
+    </table>
+  </div>
+
+  <footer>VERTEXMIND DASHBOARD PROJECT — DATA STORY ACCOMPANIES THIS FILE</footer>
+</div>
+
+<script id="data-island" type="application/json">[{"title": "Party Rock Anthem", "artist": "LMFAO", "genre": "electro house", "year": 2011, "bpm": 130, "energy": 85, "danceability": 82, "loudness_db": -5, "liveness": 8, "valence": 72, "duration_sec": 262, "acousticness": 1, "speechiness": 9, "popularity": 86}, {"title": "Rolling in the Deep", "artist": "Adele", "genre": "pop", "year": 2011, "bpm": 105, "energy": 78, "danceability": 69, "loudness_db": -5, "liveness": 9, "valence": 53, "duration_sec": 228, "acousticness": 12, "speechiness": 4, "popularity": 88}, {"title": "Someone Like You", "artist": "Adele", "genre": "pop", "year": 2011, "bpm": 67, "energy": 31, "danceability": 46, "loudness_db": -9, "liveness": 12, "valence": 18, "duration_sec": 285, "acousticness": 84, "speechiness": 3, "popularity": 87}, {"title": "Moves Like Jagger", "artist": "Maroon 5", "genre": "pop", "year": 2011, "bpm": 128, "energy": 76, "danceability": 75, "loudness_db": -4, "liveness": 28, "valence": 79, "duration_sec": 201, "acousticness": 2, "speechiness": 5, "popularity": 85}, {"title": "We Found Love", "artist": "Rihanna", "genre": "dance pop", "year": 2011, "bpm": 128, "energy": 82, "danceability": 68, "loudness_db": -5, "liveness": 33, "valence": 46, "duration_sec": 215, "acousticness": 3, "speechiness": 5, "popularity": 84}, {"title": "Levels", "artist": "Avicii", "genre": "progressive house", "year": 2011, "bpm": 126, "energy": 90, "danceability": 55, "loudness_db": -3, "liveness": 12, "valence": 45, "duration_sec": 203, "acousticness": 1, "speechiness": 4, "popularity": 83}, {"title": "Set Fire to the Rain", "artist": "Adele", "genre": "pop", "year": 2011, "bpm": 108, "energy": 69, "danceability": 45, "loudness_db": -6, "liveness": 11, "valence": 21, "duration_sec": 242, "acousticness": 5, "speechiness": 3, "popularity": 82}, {"title": "Locked Out of Heaven", "artist": "Bruno Mars", "genre": "pop", "year": 2012, "bpm": 144, "energy": 80, "danceability": 72, "loudness_db": -5, "liveness": 8, "valence": 89, "duration_sec": 233, "acousticness": 4, "speechiness": 6, "popularity": 86}, {"title": "Somebody That I Used to Know", "artist": "Gotye", "genre": "indie pop", "year": 2012, "bpm": 129, "energy": 62, "danceability": 72, "loudness_db": -8, "liveness": 9, "valence": 49, "duration_sec": 245, "acousticness": 5, "speechiness": 4, "popularity": 87}, {"title": "Call Me Maybe", "artist": "Carly Rae Jepsen", "genre": "pop", "year": 2012, "bpm": 120, "energy": 79, "danceability": 77, "loudness_db": -4, "liveness": 9, "valence": 75, "duration_sec": 193, "acousticness": 3, "speechiness": 5, "popularity": 89}, {"title": "Payphone", "artist": "Maroon 5", "genre": "pop", "year": 2012, "bpm": 100, "energy": 82, "danceability": 55, "loudness_db": -5, "liveness": 15, "valence": 49, "duration_sec": 231, "acousticness": 1, "speechiness": 7, "popularity": 83}, {"title": "Titanium", "artist": "David Guetta", "genre": "electro pop", "year": 2012, "bpm": 126, "energy": 84, "danceability": 52, "loudness_db": -3, "liveness": 30, "valence": 33, "duration_sec": 245, "acousticness": 1, "speechiness": 5, "popularity": 84}, {"title": "Don't You Worry Child", "artist": "Swedish House Mafia", "genre": "progressive house", "year": 2012, "bpm": 129, "energy": 85, "danceability": 53, "loudness_db": -4, "liveness": 11, "valence": 29, "duration_sec": 213, "acousticness": 1, "speechiness": 5, "popularity": 82}, {"title": "Get Lucky", "artist": "Daft Punk", "genre": "disco", "year": 2013, "bpm": 116, "energy": 87, "danceability": 79, "loudness_db": -8, "liveness": 9, "valence": 82, "duration_sec": 248, "acousticness": 2, "speechiness": 4, "popularity": 85}, {"title": "Wake Me Up", "artist": "Avicii", "genre": "country dance", "year": 2013, "bpm": 124, "energy": 69, "danceability": 60, "loudness_db": -7, "liveness": 11, "valence": 46, "duration_sec": 247, "acousticness": 18, "speechiness": 5, "popularity": 84}, {"title": "Royals", "artist": "Lorde", "genre": "art pop", "year": 2013, "bpm": 85, "energy": 49, "danceability": 67, "loudness_db": -12, "liveness": 11, "valence": 40, "duration_sec": 190, "acousticness": 33, "speechiness": 8, "popularity": 86}, {"title": "Counting Stars", "artist": "OneRepublic", "genre": "pop rock", "year": 2013, "bpm": 122, "energy": 68, "danceability": 68, "loudness_db": -6, "liveness": 8, "valence": 57, "duration_sec": 257, "acousticness": 8, "speechiness": 3, "popularity": 87}, {"title": "Blurred Lines", "artist": "Robin Thicke", "genre": "pop", "year": 2013, "bpm": 120, "energy": 77, "danceability": 84, "loudness_db": -5, "liveness": 8, "valence": 93, "duration_sec": 263, "acousticness": 3, "speechiness": 6, "popularity": 85}, {"title": "Roar", "artist": "Katy Perry", "genre": "pop", "year": 2013, "bpm": 180, "energy": 76, "danceability": 61, "loudness_db": -5, "liveness": 33, "valence": 67, "duration_sec": 223, "acousticness": 7, "speechiness": 5, "popularity": 86}, {"title": "Wrecking Ball", "artist": "Miley Cyrus", "genre": "pop", "year": 2013, "bpm": 120, "energy": 55, "danceability": 62, "loudness_db": -5, "liveness": 12, "valence": 46, "duration_sec": 225, "acousticness": 29, "speechiness": 4, "popularity": 82}, {"title": "Happy", "artist": "Pharrell Williams", "genre": "neo soul", "year": 2014, "bpm": 160, "energy": 82, "danceability": 65, "loudness_db": -5, "liveness": 8, "valence": 96, "duration_sec": 232, "acousticness": 18, "speechiness": 8, "popularity": 89}, {"title": "All About That Bass", "artist": "Meghan Trainor", "genre": "pop", "year": 2014, "bpm": 134, "energy": 79, "danceability": 80, "loudness_db": -3, "liveness": 15, "valence": 96, "duration_sec": 187, "acousticness": 28, "speechiness": 9, "popularity": 86}, {"title": "Shake It Off", "artist": "Taylor Swift", "genre": "pop", "year": 2014, "bpm": 160, "energy": 79, "danceability": 65, "loudness_db": -5, "liveness": 8, "valence": 94, "duration_sec": 219, "acousticness": 11, "speechiness": 11, "popularity": 88}, {"title": "Uptown Funk", "artist": "Mark Ronson", "genre": "funk", "year": 2014, "bpm": 115, "energy": 86, "danceability": 86, "loudness_db": -7, "liveness": 7, "valence": 93, "duration_sec": 270, "acousticness": 1, "speechiness": 18, "popularity": 90}, {"title": "Stay With Me", "artist": "Sam Smith", "genre": "soul", "year": 2014, "bpm": 84, "energy": 42, "danceability": 42, "loudness_db": -6, "liveness": 9, "valence": 21, "duration_sec": 172, "acousticness": 82, "speechiness": 3, "popularity": 84}, {"title": "Thinking Out Loud", "artist": "Ed Sheeran", "genre": "pop", "year": 2014, "bpm": 79, "energy": 45, "danceability": 73, "loudness_db": -6, "liveness": 18, "valence": 40, "duration_sec": 281, "acousticness": 59, "speechiness": 3, "popularity": 87}, {"title": "Sugar", "artist": "Maroon 5", "genre": "pop", "year": 2015, "bpm": 120, "energy": 80, "danceability": 87, "loudness_db": -6, "liveness": 9, "valence": 93, "duration_sec": 235, "acousticness": 8, "speechiness": 4, "popularity": 85}, {"title": "Shake It Off Remix", "artist": "Taylor Swift", "genre": "pop", "year": 2015, "bpm": 160, "energy": 79, "danceability": 65, "loudness_db": -5, "liveness": 8, "valence": 94, "duration_sec": 219, "acousticness": 11, "speechiness": 11, "popularity": 82}, {"title": "Hello", "artist": "Adele", "genre": "pop", "year": 2015, "bpm": 79, "energy": 37, "danceability": 48, "loudness_db": -7, "liveness": 11, "valence": 13, "duration_sec": 295, "acousticness": 33, "speechiness": 4, "popularity": 90}, {"title": "Cant Feel My Face", "artist": "The Weeknd", "genre": "pop", "year": 2015, "bpm": 108, "energy": 77, "danceability": 79, "loudness_db": -6, "liveness": 8, "valence": 68, "duration_sec": 213, "acousticness": 5, "speechiness": 16, "popularity": 88}, {"title": "Love Yourself", "artist": "Justin Bieber", "genre": "pop", "year": 2015, "bpm": 100, "energy": 38, "danceability": 61, "loudness_db": -10, "liveness": 14, "valence": 52, "duration_sec": 234, "acousticness": 83, "speechiness": 5, "popularity": 87}, {"title": "Hotline Bling", "artist": "Drake", "genre": "r&b", "year": 2015, "bpm": 135, "energy": 52, "danceability": 90, "loudness_db": -7, "liveness": 7, "valence": 40, "duration_sec": 267, "acousticness": 18, "speechiness": 8, "popularity": 86}, {"title": "Stressed Out", "artist": "Twenty One Pilots", "genre": "alt rock", "year": 2015, "bpm": 170, "energy": 77, "danceability": 73, "loudness_db": -6, "liveness": 11, "valence": 68, "duration_sec": 202, "acousticness": 5, "speechiness": 16, "popularity": 84}, {"title": "Closer", "artist": "The Chainsmokers", "genre": "electropop", "year": 2016, "bpm": 95, "energy": 52, "danceability": 75, "loudness_db": -6, "liveness": 11, "valence": 66, "duration_sec": 245, "acousticness": 42, "speechiness": 4, "popularity": 89}, {"title": "One Dance", "artist": "Drake", "genre": "afrobeats", "year": 2016, "bpm": 104, "energy": 62, "danceability": 79, "loudness_db": -6, "liveness": 33, "valence": 37, "duration_sec": 173, "acousticness": 6, "speechiness": 5, "popularity": 90}, {"title": "Cheap Thrills", "artist": "Sia", "genre": "dance pop", "year": 2016, "bpm": 90, "energy": 77, "danceability": 79, "loudness_db": -6, "liveness": 30, "valence": 73, "duration_sec": 224, "acousticness": 9, "speechiness": 5, "popularity": 87}, {"title": "Cant Stop the Feeling", "artist": "Justin Timberlake", "genre": "pop", "year": 2016, "bpm": 113, "energy": 82, "danceability": 67, "loudness_db": -5, "liveness": 8, "valence": 93, "duration_sec": 236, "acousticness": 8, "speechiness": 5, "popularity": 88}, {"title": "7 Years", "artist": "Lukas Graham", "genre": "pop soul", "year": 2016, "bpm": 127, "energy": 46, "danceability": 62, "loudness_db": -6, "liveness": 12, "valence": 36, "duration_sec": 225, "acousticness": 38, "speechiness": 8, "popularity": 85}, {"title": "Roses", "artist": "The Chainsmokers", "genre": "electropop", "year": 2016, "bpm": 100, "energy": 63, "danceability": 75, "loudness_db": -6, "liveness": 9, "valence": 42, "duration_sec": 193, "acousticness": 3, "speechiness": 6, "popularity": 82}, {"title": "Shape of You", "artist": "Ed Sheeran", "genre": "pop", "year": 2017, "bpm": 96, "energy": 65, "danceability": 83, "loudness_db": -3, "liveness": 8, "valence": 93, "duration_sec": 233, "acousticness": 58, "speechiness": 8, "popularity": 93}, {"title": "Despacito", "artist": "Luis Fonsi", "genre": "latin pop", "year": 2017, "bpm": 89, "energy": 82, "danceability": 65, "loudness_db": -4, "liveness": 9, "valence": 82, "duration_sec": 229, "acousticness": 21, "speechiness": 12, "popularity": 91}, {"title": "Believer", "artist": "Imagine Dragons", "genre": "rock", "year": 2017, "bpm": 125, "energy": 78, "danceability": 77, "loudness_db": -4, "liveness": 7, "valence": 67, "duration_sec": 204, "acousticness": 6, "speechiness": 8, "popularity": 88}, {"title": "Havana", "artist": "Camila Cabello", "genre": "pop", "year": 2017, "bpm": 105, "energy": 52, "danceability": 53, "loudness_db": -4, "liveness": 13, "valence": 32, "duration_sec": 217, "acousticness": 30, "speechiness": 4, "popularity": 89}, {"title": "HUMBLE", "artist": "Kendrick Lamar", "genre": "hip hop", "year": 2017, "bpm": 150, "energy": 62, "danceability": 90, "loudness_db": -7, "liveness": 10, "valence": 42, "duration_sec": 177, "acousticness": 3, "speechiness": 10, "popularity": 87}, {"title": "Perfect", "artist": "Ed Sheeran", "genre": "pop", "year": 2017, "bpm": 95, "energy": 45, "danceability": 60, "loudness_db": -6, "liveness": 11, "valence": 17, "duration_sec": 263, "acousticness": 16, "speechiness": 8, "popularity": 90}, {"title": "Thunder", "artist": "Imagine Dragons", "genre": "pop rock", "year": 2017, "bpm": 168, "energy": 77, "danceability": 82, "loudness_db": -4, "liveness": 14, "valence": 57, "duration_sec": 187, "acousticness": 7, "speechiness": 15, "popularity": 86}, {"title": "God's Plan", "artist": "Drake", "genre": "hip hop", "year": 2018, "bpm": 77, "energy": 45, "danceability": 75, "loudness_db": -9, "liveness": 11, "valence": 36, "duration_sec": 198, "acousticness": 32, "speechiness": 11, "popularity": 90}, {"title": "In My Feelings", "artist": "Drake", "genre": "hip hop", "year": 2018, "bpm": 91, "energy": 62, "danceability": 84, "loudness_db": -7, "liveness": 8, "valence": 35, "duration_sec": 217, "acousticness": 5, "speechiness": 12, "popularity": 89}, {"title": "Better Now", "artist": "Post Malone", "genre": "pop rap", "year": 2018, "bpm": 145, "energy": 68, "danceability": 68, "loudness_db": -6, "liveness": 11, "valence": 49, "duration_sec": 231, "acousticness": 4, "speechiness": 5, "popularity": 86}, {"title": "Sunflower", "artist": "Post Malone", "genre": "pop rap", "year": 2018, "bpm": 90, "energy": 76, "danceability": 76, "loudness_db": -5, "liveness": 15, "valence": 90, "duration_sec": 158, "acousticness": 5, "speechiness": 5, "popularity": 92}, {"title": "Without Me", "artist": "Halsey", "genre": "pop", "year": 2018, "bpm": 136, "energy": 49, "danceability": 75, "loudness_db": -7, "liveness": 13, "valence": 55, "duration_sec": 201, "acousticness": 29, "speechiness": 4, "popularity": 89}, {"title": "Shallow", "artist": "Lady Gaga", "genre": "pop rock", "year": 2018, "bpm": 96, "energy": 38, "danceability": 57, "loudness_db": -6, "liveness": 21, "valence": 32, "duration_sec": 216, "acousticness": 37, "speechiness": 3, "popularity": 90}, {"title": "Old Town Road", "artist": "Lil Nas X", "genre": "country rap", "year": 2019, "bpm": 136, "energy": 62, "danceability": 88, "loudness_db": -6, "liveness": 11, "valence": 64, "duration_sec": 113, "acousticness": 5, "speechiness": 10, "popularity": 93}, {"title": "Bad Guy", "artist": "Billie Eilish", "genre": "electropop", "year": 2019, "bpm": 135, "energy": 43, "danceability": 70, "loudness_db": -11, "liveness": 12, "valence": 56, "duration_sec": 194, "acousticness": 33, "speechiness": 38, "popularity": 92}, {"title": "Senorita", "artist": "Shawn Mendes", "genre": "latin pop", "year": 2019, "bpm": 117, "energy": 55, "danceability": 76, "loudness_db": -6, "liveness": 8, "valence": 75, "duration_sec": 191, "acousticness": 4, "speechiness": 3, "popularity": 91}, {"title": "Dance Monkey", "artist": "Tones and I", "genre": "electropop", "year": 2019, "bpm": 98, "energy": 59, "danceability": 82, "loudness_db": -6, "liveness": 17, "valence": 54, "duration_sec": 210, "acousticness": 7, "speechiness": 16, "popularity": 93}, {"title": "Truth Hurts", "artist": "Lizzo", "genre": "pop", "year": 2019, "bpm": 158, "energy": 72, "danceability": 71, "loudness_db": -3, "liveness": 40, "valence": 42, "duration_sec": 173, "acousticness": 6, "speechiness": 17, "popularity": 87}, {"title": "7 Rings", "artist": "Ariana Grande", "genre": "pop", "year": 2019, "bpm": 140, "energy": 32, "danceability": 78, "loudness_db": -11, "liveness": 9, "valence": 32, "duration_sec": 178, "acousticness": 59, "speechiness": 33, "popularity": 88}, {"title": "Memories", "artist": "Maroon 5", "genre": "pop", "year": 2019, "bpm": 91, "energy": 32, "danceability": 76, "loudness_db": -7, "liveness": 9, "valence": 21, "duration_sec": 189, "acousticness": 76, "speechiness": 5, "popularity": 85}, {"title": "Someone You Loved", "artist": "Lewis Capaldi", "genre": "pop", "year": 2019, "bpm": 110, "energy": 41, "danceability": 50, "loudness_db": -7, "liveness": 12, "valence": 45, "duration_sec": 182, "acousticness": 75, "speechiness": 3, "popularity": 90}]</script>
+<script>
+const SONGS = JSON.parse(document.getElementById('data-island').textContent);
+
+let state = { year: 'all', genre: 'all' };
+
+function filtered(){
+  return SONGS.filter(s =>
+    (state.year === 'all' || s.year === Number(state.year)) &&
+    (state.genre === 'all' || s.genre === state.genre)
+  );
+}
+
+function avg(arr, key){
+  if(arr.length === 0) return 0;
+  return arr.reduce((a,b)=>a+b[key],0) / arr.length;
+}
+
+function uniqueSorted(arr, key){
+  return [...new Set(arr.map(s=>s[key]))].sort((a,b)=> typeof a === 'number' ? a-b : a.localeCompare(b));
+}
+
+function populateFilters(){
+  const yearSel = document.getElementById('yearFilter');
+  const genreSel = document.getElementById('genreFilter');
+  uniqueSorted(SONGS,'year').forEach(y=>{
+    const o = document.createElement('option'); o.value=y; o.textContent=y; yearSel.appendChild(o);
+  });
+  uniqueSorted(SONGS,'genre').forEach(g=>{
+    const o = document.createElement('option'); o.value=g; o.textContent=g; genreSel.appendChild(o);
+  });
+  yearSel.addEventListener('change', e=>{ state.year = e.target.value; render(); });
+  genreSel.addEventListener('change', e=>{ state.genre = e.target.value; render(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state = {year:'all', genre:'all'};
+    yearSel.value = 'all'; genreSel.value = 'all';
+    render();
+  });
+}
+
+function renderPulse(){
+  const years = uniqueSorted(SONGS,'year');
+  const container = document.getElementById('pulseBars');
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.display='flex'; wrap.style.flexDirection='column'; wrap.style.width='100%'; wrap.style.height='100%';
+  const barsRow = document.createElement('div');
+  barsRow.style.display='flex'; barsRow.style.alignItems='flex-end'; barsRow.style.gap='4px'; barsRow.style.flex='1';
+  const labelsRow = document.createElement('div');
+  labelsRow.className='pulse-years';
+  const maxE = Math.max(...years.map(y=>avg(SONGS.filter(s=>s.year===y),'energy')));
+  years.forEach(y=>{
+    const e = avg(SONGS.filter(s=>s.year===y),'energy');
+    const bar = document.createElement('div');
+    bar.className = 'pulse-bar' + (state.year!=='all' && Number(state.year)!==y ? ' dim':'');
+    bar.style.height = Math.max(6,(e/maxE)*40) + 'px';
+    bar.title = y+': avg energy '+e.toFixed(0);
+    barsRow.appendChild(bar);
+    const lab = document.createElement('div');
+    lab.className='pulse-year'; lab.textContent = String(y).slice(2);
+    labelsRow.appendChild(lab);
+  });
+  wrap.appendChild(barsRow); wrap.appendChild(labelsRow);
+  container.appendChild(wrap);
+}
+
+function renderKPIs(){
+  const data = filtered();
+  const total = data.length;
+  const avgPop = total ? avg(data,'popularity').toFixed(1) : '—';
+  const avgBpm = total ? avg(data,'bpm').toFixed(0) : '—';
+  const genreCounts = {};
+  data.forEach(s=>{ genreCounts[s.genre] = (genreCounts[s.genre]||0)+1; });
+  const topGenre = Object.entries(genreCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  const kpis = [
+    {label:'Total Songs', value: total, sub: state.year!=='all'||state.genre!=='all' ? 'of 60 total' : 'in dataset'},
+    {label:'Avg. Popularity', value: avgPop, sub:'score out of 100'},
+    {label:'Top Genre', value: topGenre? topGenre[0] : '—', sub: topGenre? topGenre[1]+' songs' : '', small:true},
+    {label:'Avg. BPM', value: avgBpm, sub:'beats per minute'},
+  ];
+  const row = document.getElementById('kpiRow');
+  row.innerHTML = kpis.map(k=>`
+    <div class="kpi">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="${k.small?'font-size:22px;text-transform:capitalize;':''}">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderGenreChart(){
+  const data = filtered();
+  const counts = {};
+  uniqueSorted(SONGS,'genre').forEach(g=>counts[g]=0);
+  data.forEach(s=>{ counts[s.genre]=(counts[s.genre]||0)+1; });
+  const entries = Object.entries(counts).filter(([g,c])=> SONGS.some(s=>s.genre===g)).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const max = Math.max(...entries.map(e=>e[1]), 1);
+  const svg = document.getElementById('genreChart');
+  const W=560,H=280, padL=8, padB=70, padT=10, padR=8;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const bw = chartW/entries.length;
+  let html = '';
+  entries.forEach(([g,c],i)=>{
+    const h = (c/max)*chartH;
+    const x = padL + i*bw + bw*0.15;
+    const w = bw*0.7;
+    const y = padT + (chartH-h);
+    const faded = state.genre!=='all' && state.genre!==g;
+    html += `<rect class="bar${faded?' faded':''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" data-genre="${g}"></rect>`;
+    html += `<text class="bar-value" x="${x+w/2}" y="${y-6}" text-anchor="middle">${c}</text>`;
+    html += `<text class="axis-label" x="${x+w/2}" y="${H-padB+16}" text-anchor="middle" transform="rotate(-35 ${x+w/2} ${H-padB+16})">${g}</text>`;
+  });
+  svg.innerHTML = html;
+  svg.querySelectorAll('.bar').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const g = el.getAttribute('data-genre');
+      state.genre = state.genre===g ? 'all' : g;
+      document.getElementById('genreFilter').value = state.genre;
+      render();
+    });
+  });
+}
+
+function renderPopChart(){
+  const data = filtered();
+  const years = uniqueSorted(SONGS,'year');
+  const vals = years.map(y=>{
+    const subset = data.filter(s=>s.year===y);
+    return subset.length ? avg(subset,'popularity') : null;
+  });
+  const W=560,H=280, padL=30, padB=30, padT=15, padR=15;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const validVals = vals.filter(v=>v!==null);
+  const min = Math.min(...validVals)-3, max = Math.max(...validVals)+3;
+  const xStep = chartW/(years.length-1);
+  let points = [];
+  years.forEach((y,i)=>{
+    if(vals[i]===null) return;
+    const x = padL + i*xStep;
+    const yPos = padT + chartH - ((vals[i]-min)/(max-min))*chartH;
+    points.push({x,y:yPos,year:y,val:vals[i]});
+  });
+  let path = points.map((p,i)=> (i===0?'M':'L')+p.x+','+p.y).join(' ');
+  let areaPath = points.length ? `M${points[0].x},${padT+chartH} ` + points.map(p=>`L${p.x},${p.y}`).join(' ') + ` L${points[points.length-1].x},${padT+chartH} Z` : '';
+  let html = `<path class="line-fill" d="${areaPath}"></path>`;
+  html += `<path class="line-path" d="${path}"></path>`;
+  points.forEach(p=>{
+    const faded = state.year!=='all' && Number(state.year)!==p.year;
+    html += `<circle class="line-dot${faded?' faded':''}" cx="${p.x}" cy="${p.y}" r="4" data-year="${p.year}" style="${faded?'opacity:.25':''}"></circle>`;
+    html += `<text class="axis-label" x="${p.x}" y="${H-8}" text-anchor="middle">${p.year}</text>`;
+    html += `<text class="bar-value" x="${p.x}" y="${p.y-10}" text-anchor="middle">${p.val.toFixed(0)}</text>`;
+  });
+  document.getElementById('popChart').innerHTML = `<defs><linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1DB954" stop-opacity="0.45"/><stop offset="100%" stop-color="#1DB954" stop-opacity="0"/></linearGradient></defs>` + html;
+  document.querySelectorAll('#popChart .line-dot').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const y = el.getAttribute('data-year');
+      state.year = state.year===y ? 'all' : y;
+      document.getElementById('yearFilter').value = state.year;
+      render();
+    });
+  });
+}
+
+function renderEnergyChart(){
+  const data = filtered();
+  const years = uniqueSorted(SONGS,'year');
+  const W=560,H=280, padL=30, padB=30, padT=15, padR=15;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const xStep = chartW/(years.length-1);
+  const maxScale = 180;
+  function buildLine(key,color){
+    let pts = [];
+    years.forEach((y,i)=>{
+      const subset = data.filter(s=>s.year===y);
+      if(!subset.length) return;
+      const v = avg(subset,key);
+      const x = padL+i*xStep;
+      const yPos = padT + chartH - (v/maxScale)*chartH;
+      pts.push({x,y:yPos,v});
+    });
+    const path = pts.map((p,i)=>(i===0?'M':'L')+p.x+','+p.y).join(' ');
+    return {path,pts};
+  }
+  const energyLine = buildLine('energy','#1DB954');
+  const bpmLine = buildLine('bpm','#ffb454');
+  let html = `<path d="${energyLine.path}" fill="none" stroke="#1DB954" stroke-width="2.5"></path>`;
+  html += `<path d="${bpmLine.path}" fill="none" stroke="#ffb454" stroke-width="2.5" stroke-dasharray="4,3"></path>`;
+  energyLine.pts.forEach(p=> html += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#1DB954"></circle>`);
+  bpmLine.pts.forEach(p=> html += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#ffb454"></circle>`);
+  years.forEach((y,i)=>{
+    html += `<text class="axis-label" x="${padL+i*xStep}" y="${H-8}" text-anchor="middle">${y}</text>`;
+  });
+  html += `<rect x="${padL}" y="${padT-5}" width="9" height="9" fill="#1DB954"></rect><text class="axis-label" x="${padL+13}" y="${padT+3}">Energy</text>`;
+  html += `<rect x="${padL+70}" y="${padT-5}" width="9" height="9" fill="#ffb454"></rect><text class="axis-label" x="${padL+83}" y="${padT+3}">BPM</text>`;
+  document.getElementById('energyChart').innerHTML = html;
+}
+
+function renderDanceChart(){
+  const data = filtered();
+  const genres = uniqueSorted(SONGS,'genre');
+  const entries = genres.map(g=>{
+    const subset = data.filter(s=>s.genre===g);
+    return [g, subset.length ? avg(subset,'danceability') : 0, subset.length];
+  }).filter(e=>e[2]>0).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const max = 100;
+  const W=560,H=280, padL=8, padB=70, padT=10, padR=8;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const bw = chartW/entries.length;
+  let html='';
+  entries.forEach(([g,v],i)=>{
+    const h = (v/max)*chartH;
+    const x = padL+i*bw+bw*0.15;
+    const w = bw*0.7;
+    const y = padT+(chartH-h);
+    const faded = state.genre!=='all' && state.genre!==g;
+    html += `<rect class="bar${faded?' faded':''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" data-genre="${g}"></rect>`;
+    html += `<text class="bar-value" x="${x+w/2}" y="${y-6}" text-anchor="middle">${v.toFixed(0)}</text>`;
+    html += `<text class="axis-label" x="${x+w/2}" y="${H-padB+16}" text-anchor="middle" transform="rotate(-35 ${x+w/2} ${H-padB+16})">${g}</text>`;
+  });
+  document.getElementById('danceChart').innerHTML = html;
+  document.querySelectorAll('#danceChart .bar').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const g = el.getAttribute('data-genre');
+      state.genre = state.genre===g ? 'all' : g;
+      document.getElementById('genreFilter').value = state.genre;
+      render();
+    });
+  });
+}
+
+function renderTable(){
+  const data = [...filtered()].sort((a,b)=>b.popularity-a.popularity).slice(0,10);
+  const body = document.getElementById('songTableBody');
+  if(data.length===0){
+    body.innerHTML = `<tr><td colspan="6" class="empty">No songs match the current filters.</td></tr>`;
+    return;
+  }
+  body.innerHTML = data.map((s,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td>${s.title}</td>
+      <td>${s.artist}</td>
+      <td style="color:var(--text-dim)">${s.genre}</td>
+      <td style="color:var(--text-dim)">${s.year}</td>
+      <td>
+        <div class="pop-cell">
+          <div class="pop-bar-bg"><div class="pop-bar-fill" style="width:${s.popularity}%"></div></div>
+          <div class="num">${s.popularity}</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderStatus(){
+  document.getElementById('statusCount').textContent = filtered().length;
+}
+
+function render(){
+  renderPulse();
+  renderKPIs();
+  renderGenreChart();
+  renderPopChart();
+  renderEnergyChart();
+  renderDanceChart();
+  renderTable();
+  renderStatus();
+}
+
+populateFilters();
+render();
+</script>
+</body>
+</html>
